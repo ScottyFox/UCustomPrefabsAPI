@@ -8,6 +8,29 @@ namespace UCustomPrefabsAPI
 {
     public static class UCustomPrefabFileHelper
     {
+        public static List<string> FindDirectoriesWithFileName(string path,string fileName)
+        {
+            List<string> results = new List<string>();
+            Queue<string> workingDirectories = new Queue<string>();
+            workingDirectories.Enqueue(path);
+            while (workingDirectories.Count > 0)
+            {
+                string directory = workingDirectories.Dequeue();
+                try
+                {
+                    if (File.Exists(Path.Combine(directory, fileName)))
+                        results.Add(directory);
+                    foreach (string subDirectory in Directory.GetDirectories(directory))
+                        workingDirectories.Enqueue(subDirectory);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Unable to Access {directory}");
+                    Debug.LogError(e);
+                }
+            }
+            return results;
+        }
         private static bool IsAssetBundle(string path)
         {
             bool valid = false;
@@ -34,27 +57,34 @@ namespace UCustomPrefabsAPI
         }
         public static void TryToLoadTemplateAssetBundlesFromPath<T>(string path)
         {
-            var assemblyPath = Path.GetDirectoryName(typeof(T).Assembly.Location);
-            var fullPath = Path.Combine(assemblyPath, path);
-            var files = Directory.GetFiles(fullPath);
-            var ValidAssetBundlePaths = new List<string>();
-            foreach (var file in files)
+            try
             {
-                if (IsAssetBundle(file))
+                var assemblyPath = Path.GetDirectoryName(typeof(T).Assembly.Location);
+                var fullPath = Path.Combine(assemblyPath, path);
+                var files = Directory.GetFiles(fullPath);
+                var ValidAssetBundlePaths = new List<string>();
+                foreach (var file in files)
                 {
-                    ValidAssetBundlePaths.Add(Path.Combine(path, Path.GetFileName(file)));
-                }
-            }
-            foreach (var assetbundlePath in ValidAssetBundlePaths)
-            {
-                if (AssetBundleRegistry.Register<T>(assetbundlePath, out var name))
-                    if (!TryToLoadTemplatesFromAssetBundle(name))
+                    if (IsAssetBundle(file))
                     {
-                        Debug.Log($"Unable to load Templates from Assetbundle : {name}");
-                        AssetBundleRegistry.Remove(name, true);
+                        ValidAssetBundlePaths.Add(Path.Combine(path, Path.GetFileName(file)));
                     }
-                else
-                    Debug.Log($"Unable to Register AssetBundle : {assetbundlePath}");
+                }
+                foreach (var assetbundlePath in ValidAssetBundlePaths)
+                {
+                    if (AssetBundleRegistry.Register<T>(assetbundlePath, out var name))
+                        if (!TryToLoadTemplatesFromAssetBundle(name))
+                        {
+                            Debug.Log($"Unable to load Templates from Assetbundle : {name}");
+                            AssetBundleRegistry.Remove(name, true);
+                        }
+                        else
+                            Debug.Log($"Unable to Register AssetBundle : {assetbundlePath}");
+                }
+            }catch(Exception e)
+            {
+                Debug.Log($"Unable To Access Path : {path}");
+                Debug.LogError(e);
             }
         }
         public static bool TryToLoadTemplatesFromAssetBundle(string assetBundleName)

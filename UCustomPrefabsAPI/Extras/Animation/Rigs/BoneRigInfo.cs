@@ -6,6 +6,7 @@ namespace UCustomPrefabsAPI.Extras.Animation
     [Serializable]
     public class BoneRigInfo
     {
+        public string version = string.Empty;
         public List<Quaternion> rotations = new List<Quaternion>();
         public bool useRotations = true;
         public List<Vector3> positions = new List<Vector3>();

@@ -38,7 +38,6 @@ namespace UCustomPrefabsAPI.Extras.Animation
             positions = new List<Vector3>(info.positions);
             usePositions = info.usePositions;
             rootIndex = info.rootIndex;
-            offset = info.offset;
             RegisterBones(info);
             VerifyBones();
         }
@@ -71,6 +70,27 @@ namespace UCustomPrefabsAPI.Extras.Animation
                 targetBones.Add(targetBone);
             }
             VerifyBones();
+            switch (info.version)
+            {
+                case RigUtilities.CurrentRigVersion:
+                    //Latest Offset
+                    offset = info.offset;
+                    break;
+                default:
+                    //Legacy Offset
+                    //TEMP Legacy -> v0.0.4 Conversion
+                    {
+                        if (rootIndex >= 0 && rootIndex < targetBones.Count)
+                        {
+                            var root = targetBones[rootIndex];
+                            //Legacy Method -> World Position
+                            offset = root.position - Vector3.Project(info.offset, root.up);
+                            //World Position -> v0.0.4 Method
+                            offset = root.InverseTransformVector(offset - root.position);
+                        }
+                    }
+                    break;
+            }
         }
         public void VerifyBones()
         {

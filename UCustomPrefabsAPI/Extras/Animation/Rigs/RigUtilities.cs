@@ -7,6 +7,11 @@ namespace UCustomPrefabsAPI.Extras.Animation
     public static class RigUtilities
     {
         /// <summary>
+        /// Current RigInfo Version of this API. Used for Compatibility.
+        /// WIP.
+        /// </summary>
+        public const string CurrentRigVersion = "0.0.4";
+        /// <summary>
         /// Array of HumanBodyBones for Reference
         /// </summary>
         public static HumanBodyBones[] HumanBodyBonesAry = (HumanBodyBones[])Enum.GetValues(typeof(HumanBodyBones));
@@ -55,6 +60,7 @@ namespace UCustomPrefabsAPI.Extras.Animation
                 }
                 var size = matchedBones.Count;
                 rig = new BoneRigInfo();
+                rig.version = CurrentRigVersion;
                 rig.originUsePaths = targetBoneMap.UsePaths;
                 rig.targetUsePaths = Template.BoneMap.UsePaths;
                 for (int i = 0; i < size; i++)
@@ -97,7 +103,10 @@ namespace UCustomPrefabsAPI.Extras.Animation
         /// </summary>
         public static Vector3 CalculatePositionOffset(Transform origin, Transform target)
         {
-            return Vector3.Project(target.position - origin.position, target.up);
+            //v0.0.4
+            return target.InverseTransformVector(origin.position - target.position);
+            //Old
+            //return Vector3.Project(target.position - origin.position, target.up);
         }
         /// <summary>
         /// Calculates rotational offset between origin and target.
@@ -111,7 +120,10 @@ namespace UCustomPrefabsAPI.Extras.Animation
         /// </summary>
         public static void ApplyPositionOffset(Transform origin, Transform target, Vector3 offset)
         {
-            origin.position = target.position - Vector3.Project(offset, target.up);
+            //v0.0.4
+            origin.position = target.position + target.TransformVector(offset);
+            //Old
+            //origin.position = target.position - Vector3.Project(offset, target.up);
         }
         /// <summary>
         /// Applys Rotational Offset
